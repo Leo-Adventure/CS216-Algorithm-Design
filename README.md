@@ -9,6 +9,12 @@ This week OJ questions' topic is stable matching, concentrating on one-to-one ma
 
 OJ questions in this week are about using greedy algorithm wisely.
 
+## OJ3 Simulation and Shortest Path
+
+The question A is about the simulation of the machanism of LRU
+
+The question B is about the shortest path and reverse of modulo
+
 ## Project 1 Zip Compressor
 
 Implement a ZIP compressor using Java or C/C++. 
