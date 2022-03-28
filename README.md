@@ -13,7 +13,7 @@ OJ questions in this week are about using greedy algorithm wisely.
 
 The question A is about the simulation of the machanism of LRU
 
-The question B is about the shortest path and reverse of modulo
+The question B is about the shortest path of the weighted graph and reverse of modulo.
 
 ## Project 1 Zip Compressor
 
