@@ -15,6 +15,12 @@ The question A is about the simulation of the machanism of LRU
 
 The question B is about the shortest path of the weighted graph and reverse of modulo.
 
+## OJ4 Greed algorithm and Distance transformation
+
+The question A is about the greedy algorithm 
+
+The question B is about the transformation between **Manhattan Distanc** and **Chebyshev Distance**
+
 ## Project 1 Zip Compressor
 
 Implement a ZIP compressor using Java or C/C++. 
