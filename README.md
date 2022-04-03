@@ -21,6 +21,26 @@ The question A is about the greedy algorithm
 
 The question B is about the transformation between **Manhattan Distanc** and **Chebyshev Distance**
 
+## Assignment1 Report on modern CPU caching
+
+Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
+
+1. What is the cache performance measurement?
+
+2. What are the cache replacement policies, LRU?
+
+3. Any other policies and methods to improve performance?
+
+​	The report should not exceed 2 pages in font size 10.
+
+## Assignment2 Design an algorithm to find the closest pair of a 3D point cloud 
+
+In this assignment, I have designed, implemented and analyzed the algorithm to find the closest pair of 3D point cloud.
+
+The procedure of designing the algorithm has been introduced detailedly.
+
+What's more, I have uploaded the implemented code to the directory “Assignment/Assignment2/closed-pair.cpp”
+
 ## Project 1 Zip Compressor
 
 Implement a ZIP compressor using Java or C/C++. 
