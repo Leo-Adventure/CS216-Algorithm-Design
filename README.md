@@ -21,6 +21,12 @@ The question A is about the greedy algorithm
 
 The question B is about the transformation between **Manhattan Distanc** and **Chebyshev Distance**
 
+## OJ5 Divide and Conquer: Peano curve and Segment Tree
+
+The question A is about the Peano curve, which is the advanced level of Hilbert curve, quite interesting.
+
+The question B is the application of segment Tree, which is quite useful in updating the interval value and finding the sum of a given interval in $O(nlogn)$
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
