@@ -52,11 +52,13 @@ What's more, I have uploaded the implemented code to the directory “Assignment
 Implement a ZIP compressor using Java or C/C++. 
 
 1.  It can compress one sinle file into a zip file. Multiple-file compression is optional.
-
-2. The compressed zip file can be decompressed successfully by professional zip software. Such as it can be decompressed by double clicking in Windows/MacOS. 
-
-3. You can implement the commonly used compression algorithm DEFLATE and static Huffman in DEFLATE. 
-
-4. Please submit by the deadline. Otherwise 0 score. Sumit your report in PDF which clearly introduces your implementation and the highlights, and submit your source code in a zip file. 
-
+2.  The compressed zip file can be decompressed successfully by professional zip software. Such as it can be decompressed by double clicking in Windows/MacOS. 
+3.  You can implement the commonly used compression algorithm DEFLATE and static Huffman in DEFLATE. 
+4.  Please submit by the deadline. Otherwise 0 score. Sumit your report in PDF which clearly introduces your implementation and the highlights, and submit your source code in a zip file. 
 5. If you reference some source code from others, please state it clearly in the report and give references at the end of the report.
+
+### Progress
+
+Complete the zero-compress convertion of simple txt file (only contains "Hello World!") to zip file, which can be decompressed by OS.
+
+Know the meaning of each segment of a zip file.
