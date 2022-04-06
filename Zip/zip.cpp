@@ -1,8 +1,43 @@
 #include <iostream>
 #include<string>
+#include<cstring>
 #include <fstream>
+#include <stdio.h>   
+#include <stdlib.h>   
+#include <string.h>   
+#include <errno.h>   
+#include <unistd.h>   
+#include <fcntl.h>   
+#include <sys/stat.h>  
+
+#include <filesystem>
+#include <chrono>
+
+#define BUFSIZE  16 * 1024  
+
 
 using namespace std;
+
+
+static unsigned int crc_table[256];  
+ 
+void init_crc_table(void)  
+{  
+    unsigned int c;  
+    unsigned int i, j;  
+ 
+    for (i = 0; i < 256; i++) {  
+        c = (unsigned int)i;  
+        for (j = 0; j < 8; j++) {  
+            if (c & 1)  
+                c = 0xedb88320 ^ (c >> 1);  
+            else  
+                c = c >> 1;  
+        }  
+        crc_table[i] = c;  
+    }  
+}  
+ 
 
 
 bool write_normal_file(string filename){
@@ -19,10 +54,70 @@ bool write_bin_file(char* buffer, size_t length){
     ouF.close();
     return true;
 }
+ 
+unsigned int crc32(unsigned int crc,unsigned char *buffer, unsigned int size)  
+{  
+    unsigned int i = crc ^ 0xffffffff;  
+    while (size--)
+    {
+		i = (i >> 8) ^ crc_table[(i & 0xff) ^ *buffer++];
+    }
+    return i ^ 0xffffffff;
+} 
+
+
+int calc_img_crc(const char *in_file, unsigned int *img_crc)  
+{  
+    int fd;  
+    int nread;  
+    int ret;  
+    unsigned char buf[BUFSIZE];
+    unsigned int crc = 0;   
+ 
+    fd = open(in_file, O_RDONLY);  
+    if (fd < 0) {  
+        printf("%d:open %s.\n", __LINE__, strerror(errno));  
+        return -1;  
+    }  
+ 
+    while ((nread = read(fd, buf, BUFSIZE)) > 0) {  
+        crc = crc32(crc, buf, nread);  
+    }  
+    *img_crc = crc;  
+ 
+    close(fd);  
+ 
+    if (nread < 0) {  
+        printf("%d:read %s.\n", __LINE__, strerror(errno));  
+        return -1;  
+    }  
+ 
+    return 0;  
+}  
 
 bool convert_file_to_zip(string read_filename, string write_filename){
     char* buffer = nullptr;
     size_t length = 0;
+
+    int ret;  
+    unsigned int file_crc = 0xffffffff;  
+   
+    init_crc_table();  
+    ret = calc_img_crc(read_filename.data(), &file_crc);  
+    if (ret < 0) 
+	{  
+        exit(1);  
+    }  
+
+  
+
+    auto lstTime = filesystem::last_write_time(read_filename);
+    //获取filetime和systemtime之间的时间差
+    auto elapse = chrono::duration_cast<std::chrono::seconds>(filesystem::file_time_type::clock::now().time_since_epoch() - chrono::system_clock::now().time_since_epoch()).count();
+    auto systemTime = chrono::duration_cast<chrono::seconds>(lstTime.time_since_epoch()).count() - elapse;
+    
+    tm *lsystemTime = localtime(&systemTime);
+    
 
     fstream fin(read_filename);
     ofstream fout(write_filename);
@@ -36,8 +131,11 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fin.seekg(0, ios::end);
         length = fin.tellg();
         fin.seekg(0, ios::beg);
-        buffer = new char[length];
+        buffer = new char[length + 1];
+        memset(buffer, 0, sizeof(char) * (length + 1));
         fin.read(buffer, length);
+        // cout << "Length = " << length << endl;
+        // cout << "buffer = " << buffer << endl;
         fout.seekp(0, ios::beg);
 
         // 填充zip header 字段
@@ -65,31 +163,56 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fout.write(method, 2 * sizeof(char));
 
         //File last modification time
-        char time[2];
-        time[0] = 'N', time[1] = 'S';
+        int s = lsystemTime->tm_sec / 2;
+        int m = lsystemTime->tm_min;
+        int h = lsystemTime->tm_hour;
+        h <<= 6;
+        h |= m;
+        h <<= 5;
+        h |= s;
+        
+
+        char *time = (char*)&h;
+        
         fout.write(time, 2 * sizeof(char));
 
         //File last modification date
-        char date[2];
-        date[0] = 0x85 + '\0', date[1] = 0x54 + '\0';
+        int d = lsystemTime->tm_mday;
+        int mon = lsystemTime->tm_mon + 1;
+        int y = lsystemTime->tm_year - 80;
+        // cout << "d = " << d << " mon = " << mon << " y = " << y << endl;
+        y <<= 4;
+        y |= mon;
+        y <<= 5;
+        y |= d;
+        // cout << "Y = " << y << endl;
+        
+        char *date = (char*)&y;
         fout.write(date, 2 * sizeof(char));
 
         //CRC-32 of uncompressed data
-        char CRC[4];
-        CRC[0] = 0x95 + '\0'; CRC[1] = 0X19 + '\0'; CRC[2] = 0x85 + '\0'; CRC[3] = 0x1b + '\0';
+        char *CRC = (char*)&file_crc;
         fout.write(CRC, 4 * sizeof(char));
 
         //Compressed size
-        char com_size[4];
-        com_size[0] = 0xc + '\0', com_size[1] = '\0', com_size[2] = '\0', com_size[3] = '\0';
+        int buffer_len = strlen(buffer);
+        // cout << buffer_len << endl;
+
+        char *com_size;
+        com_size = (char*)&buffer_len;
         fout.write(com_size, 4 * sizeof(char));
         //Uncompressed size
-        char uncom_size[4];
-        uncom_size[0] = 0xc + '\0', uncom_size[1] = '\0', uncom_size[2] = '\0', uncom_size[3] = '\0';
+        
+        char *uncom_size = nullptr;
+
+        uncom_size = (char*)&buffer_len;
+        // uncom_size[0] = 0x7 + '\0', uncom_size[1] = '\0', uncom_size[2] = '\0', uncom_size[3] = '\0';
         fout.write(uncom_size, 4 * sizeof(char));
+        
         //File name length
-        char file_name_len[2];
-        file_name_len[0] = 8 + '\0', file_name_len[1] = '\0';
+        int read_filename_len = read_filename.size();
+        // cout << "read_filename_len = " << read_filename_len << endl;
+        char *file_name_len = (char*)&read_filename_len;
         fout.write(file_name_len, 2 * sizeof(char));
 
         //Extra field length
@@ -150,7 +273,6 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fout.write(in_file_atr, 2 * sizeof(char));
 
         
-
         //external file attributes
         char ex_file_atr[4];
         ex_file_atr[0] = 0x20 + '\0', ex_file_atr[1] = '\0', ex_file_atr[2] = '\0', ex_file_atr[3] = '\0';
@@ -195,8 +317,8 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fout.write(size_cen_dir, 4 * sizeof(char));
 
         //offset of start of central directory with respect to the starting disk number
-        char offset[4];
-        offset[0] = 0x32 + '\0', offset[1] = '\0', offset[2] = '\0', offset[3] = '\0';
+        int start_offset = 30 + read_filename_len + buffer_len;
+        char *offset = (char*)&start_offset;
         fout.write(offset, 4 * sizeof(char));
 
         //zip file comment length
@@ -207,14 +329,13 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         length = fin.tellg();
         
         
-        cout << "length = " << length  << " bytes" << endl;
-        cout << buffer << endl;
+        // cout << "length = " << length  << " bytes" << endl;
+        // cout << buffer << endl;
         
     }
     
     fin.close();
     fout.close();
-
     // write_bin_file(buffer, length);
     delete(buffer);
     return true;

@@ -59,6 +59,21 @@ Implement a ZIP compressor using Java or C/C++.
 
 ### Progress
 
+#### 2022/4/6
+
 Complete the zero-compress convertion of simple txt file (only contains "Hello World!") to zip file, which can be decompressed by OS.
 
 Know the meaning of each segment of a zip file.
+
+#### 2022/4/7
+
+Complete the zero-compress convertion of simple file (not only contains "Hello World!!!") to zip file, which can be decompressed by OS
+
+replace each segment of zip file to what it should be.
+
+The key segments are:
+
+- last modified time and date (quite troublesome)
+- the crc32 encryption 
+- the size of file before and after compressing.
+- offset of start of central directory with respect to the starting disk number
