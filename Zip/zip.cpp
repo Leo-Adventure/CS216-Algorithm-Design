@@ -15,9 +15,7 @@
 
 #define BUFSIZE  16 * 1024  
 
-
 using namespace std;
-
 
 static unsigned int crc_table[256];  
  
@@ -39,10 +37,10 @@ void init_crc_table(void)
 }  
  
 
-
 bool write_normal_file(string filename){
     ofstream fout(filename);
-    fout << "Hello world!";
+    fout << "Hello world!Hello world!Hello world!Hello world!Hello world!Hello world!Hello world!Hello world!Hello world!Hello world! \
+    Hello world!Hello world! Hello world!Hello world!Hello world!Hello world!Hello world!" ;
     fout.close();
     return true;
 }
@@ -54,7 +52,7 @@ bool write_bin_file(char* buffer, size_t length){
     ouF.close();
     return true;
 }
- 
+
 unsigned int crc32(unsigned int crc,unsigned char *buffer, unsigned int size)  
 {  
     unsigned int i = crc ^ 0xffffffff;  
@@ -94,6 +92,8 @@ int calc_img_crc(const char *in_file, unsigned int *img_crc)
  
     return 0;  
 }  
+
+
 
 bool convert_file_to_zip(string read_filename, string write_filename){
     char* buffer = nullptr;
