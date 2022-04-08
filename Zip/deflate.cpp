@@ -1,6 +1,9 @@
 #include<iostream>
 #include<map>
-
+#include<string>
+#include<cstring>
+#include<vector>
+#include<queue>
 
 #define DEFLATE_NUM_PRECODE_SYMS		19
 #define DEFLATE_MAX_MATCH_LEN			258
@@ -112,6 +115,33 @@ static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
 	16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15
 };
 
+int len = 0;
+int bits = 0;
+
+void emitBytes(char* chararray)
+{
+  while (len >= 8)
+  {
+    int num = (bits >> (len - 8)) & 0xff;
+   
+    char *c = (char *)&num;
+   
+    strncat(chararray, c, 1);
+    len -= 8;
+    bits >>= 8;
+  }
+}
+
+void emitBits(char* chararray, int bit, int l)
+{
+  bits <<= l;
+  bits |= bit;
+  len += l;
+  emitBytes(chararray);
+}
+
+
+
 size_t HashCode (const std::string &str) {
     size_t h = 0;
     for (size_t i = 0; i < str.size(); ++i)
@@ -119,28 +149,132 @@ size_t HashCode (const std::string &str) {
     return h;
 }
 
-void literal_to_bits(char* chars, char* out){
-    return;
+map<size_t, size_t> pos_hash_map;
+map<size_t, queue<int>> hash_pos_map;
+
+void literal_to_bits(const char* chars, char* out, int len){
+	for(int i = 0; i < len; i++){
+		char ch = chars[i];
+		int num = ch - '0';
+		if(num <= 143){
+			num = (num + 0b00110000) & 0b11111111;
+			emitBits(out, num, 8);
+		}else{
+			num -= 144;
+			num = (num + 0b110010000) & 0b111111111;
+			emitBits(out, num, 9);
+		}
+	}
+    
 }
 void distance_len_to_bits(size_t distance, size_t len, char* out){
+	int len_idx = 0;
+	int len_diff = 0;
+	// 找到长度对应字段索引
+	for(size_t i = 0; i < 29; i++){
+		if(len >= deflate_length_slot_base[i]){
+			len_idx = i;
+			len_diff = len - deflate_length_slot_base[i];
+			break;
+		}
+	}
+	if(len < 115){
+		int len_num = len_idx + 0b0000001;
+		int len_extra = deflate_extra_length_bits[len_idx];
+		len_num <<= len_extra;
+		len_num |= (len_diff);
+		int len_total_bit = 7 + len_extra;
+		emitBits(out, len_num, len_total_bit);
+	}else{
+		int len_num = len_idx - 115 + 0b11000000;
+		int len_extra = deflate_extra_length_bits[len_idx];
+		len_num <<= len_extra;
+		len_num |= (len_diff);
+		int len_total_bit = 8 + len_extra;
+		emitBits(out, len_num, len_total_bit);
+	}
+	int dist_idx = 0;
+	int dist_diff = 0;
+	for(size_t i = 0; i < 30; i++){
+		if(distance >= deflate_offset_slot_base[i]){
+			dist_idx = i;
+			dist_diff = distance - deflate_offset_slot_base[i];
+			break;
+		}
+	}
+	int dist_extra_bit = deflate_extra_offset_bits[dist_idx];
+	int dist_num = dist_idx;//5 bits
+	dist_num <<= dist_extra_bit;
+	dist_num |= dist_diff;
+	int dist_total_bit = 5 + dist_extra_bit;
+	emitBits(out, dist_num, dist_total_bit);
+    
+}
+
+pair<size_t, size_t> str_match(const string& buffer, const string& str){
+	/*
+	计算[i,i+4)的hash
+	枚举hash表内所有hash值相等的pos:
+	//此时说明[i,i+4)与[pos,pos+4)有很大概率相等
+	从i开始逐字节比较，得到最长匹配长度
+	返回最长匹配长度和位置
+	*/
+	size_t hash = HashCode(str);
+	if(hash_pos_map.count(hash)){
+		queue<int> que = hash_pos_map[hash];
+		int que_size = que.size();
+		int idx = 0, length = 0;
+		for(int i = 0; i < que_size; i++){
+			int pos = que.front();
+			que.pop();
+			
+			int cnt = 0;
+			int str_len = str.size();
+			while(cnt < str_len && buffer[i + cnt] == str[cnt]){
+				cnt ++;
+			}
+			if(cnt >= length){
+				length = cnt;
+				idx = pos;
+			}
+
+			que.push(pos);
+		}
+		return {idx, length};
+	}else{
+		return {-1, -1};
+	}
+    
+}
+
+void update_hash(string buffer, size_t i){
+	/*
+		更新hash：
+		把i-32768之前位置的hash从字典当中删除
+		计算[i,i+4)的hash并放入hash表
+	*/
+	for(auto iter = pos_hash_map.rbegin(); iter != pos_hash_map.rend() && iter -> first >= i - 32768; iter++){
+		size_t hash = iter -> second;
+		queue<int>q = hash_pos_map[hash];
+
+		while(!q.empty() && q.front() < i - 32768){
+			q.pop();
+		}
+		pos_hash_map.erase(iter->first);
+
+     }
+	size_t hashcode = HashCode(buffer.substr(i, 4));
+	pos_hash_map[i] = hashcode;
+	hash_pos_map[hashcode].push(i);
     return;
 }
-
-pair<size_t, size_t> str_match(string str){
-    return {-1, -1};
-}
-
-void update_hash(size_t i){
-    return;
-}
-
-
 
 
 bool lz77(const char * buffer, char *output){
     
     size_t max_len = strlen(buffer);
     string buffer_str = buffer;
+	
 
     if(!buffer){
         cerr << "The input char pointer is nullptr" << endl;
@@ -150,30 +284,32 @@ bool lz77(const char * buffer, char *output){
     for(size_t i = 0; i < max_len;){
         string out = "";
         size_t idx = 0, len = 0;
-        if(i + 5 >= max_len){
-            out = buffer_str.substr(i, max_len - i);
-        }else if(str_match(buffer_str.substr(i, 4)).first != -1){
-            idx = str_match(buffer_str.substr(i, 4)).first;
-            len = str_match(buffer_str.substr(i, 4)).second;
-            char * res = nullptr;
-            distance_len_to_bits(i - idx, len, res);
-            out = res;
-            for(int j = 0; j < len; j ++){
-                update_hash(i + j);
+        if(i + 5 >= max_len){// 剩余空间 <= 5, 直接发射
+            // out += buffer_str.substr(i, max_len - i);
+			int len = max_len - i;
+			literal_to_bits(buffer + i, output, len);
+			
+        }else if(str_match(buffer_str, buffer_str.substr(i)).first != -1){ // 字符串匹配
+            
+			idx = str_match(buffer_str, buffer_str.substr(i)).first;
+            len = str_match(buffer_str, buffer_str.substr(i)).second;
+            
+			
+            distance_len_to_bits(i - idx, len, output);
+            // out += res;
+            
+			for(int j = 0; j < len; j ++){
+                update_hash(buffer_str, i + j);
             }
             i += len;
-        }else{
-            out = buffer_str.at(i) + "";
-            update_hash(i);
+        }else{ // 字符串不匹配，直接发射
+			
+            out += buffer_str.at(i) + "";
+            update_hash(buffer_str, i);
             i++;
         }
     }
-
-
-
     return true;
-
-
 }
 
 

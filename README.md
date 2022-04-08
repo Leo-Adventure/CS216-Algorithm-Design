@@ -77,3 +77,11 @@ The key segments are:
 - the crc32 encryption 
 - the size of file before and after compressing.
 - offset of start of central directory with respect to the starting disk number
+
+#### 2022/4/8
+
+- implement the LZ77 algorithm but the alogorithm have not been tested.
+
+- Implement the bit stream emitter and LZ77 encoding.
+- Tomorrow the algorithm will be tested and static Huffman will be implemented.
+- Fighting
