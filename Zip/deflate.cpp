@@ -3,6 +3,7 @@
 #include<string>
 #include<cstring>
 #include<vector>
+#include<fstream>
 #include<queue>
 
 #define DEFLATE_NUM_PRECODE_SYMS		19
@@ -116,31 +117,34 @@ static const u8 deflate_precode_lens_permutation[DEFLATE_NUM_PRECODE_SYMS] = {
 };
 
 int len = 0;
+size_t total_bit = 0;
 int bits = 0;
 
-void emitBytes(char* chararray)
+void emitBytes(ofstream& fout)
 {
   while (len >= 8)
   {
     int num = (bits >> (len - 8)) & 0xff;
-   
     char *c = (char *)&num;
-   
-    strncat(chararray, c, 1);
+	fout.write(c, sizeof(char) * 1);
+	// cout << "num = " << num << endl;
+	// cout << "*c = " << strlen(c) << endl;
+	// cout << "strlen(chararray) = " << strlen(chararray) << endl;
+    // strncat(chararray, c, 1);
+	// cout << "strlen(chararray) = " << strlen(chararray) << endl;
     len -= 8;
     bits >>= 8;
   }
 }
 
-void emitBits(char* chararray, int bit, int l)
+void emitBits(ofstream& fout, int bit, int l)
 {
   bits <<= l;
   bits |= bit;
   len += l;
-  emitBytes(chararray);
+  total_bit += l;
+  emitBytes(fout);
 }
-
-
 
 size_t HashCode (const std::string &str) {
     size_t h = 0;
@@ -152,22 +156,22 @@ size_t HashCode (const std::string &str) {
 map<size_t, size_t> pos_hash_map;
 map<size_t, queue<int>> hash_pos_map;
 
-void literal_to_bits(const char* chars, char* out, int len){
+void literal_to_bits(ofstream& fout, const char* chars, int len){
 	for(int i = 0; i < len; i++){
 		char ch = chars[i];
 		int num = ch - '0';
 		if(num <= 143){
 			num = (num + 0b00110000) & 0b11111111;
-			emitBits(out, num, 8);
+			emitBits(fout, num, 8);
 		}else{
 			num -= 144;
 			num = (num + 0b110010000) & 0b111111111;
-			emitBits(out, num, 9);
+			emitBits(fout, num, 9);
 		}
 	}
     
 }
-void distance_len_to_bits(size_t distance, size_t len, char* out){
+void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 	int len_idx = 0;
 	int len_diff = 0;
 	// 找到长度对应字段索引
@@ -184,14 +188,14 @@ void distance_len_to_bits(size_t distance, size_t len, char* out){
 		len_num <<= len_extra;
 		len_num |= (len_diff);
 		int len_total_bit = 7 + len_extra;
-		emitBits(out, len_num, len_total_bit);
+		emitBits(fout, len_num, len_total_bit);
 	}else{
 		int len_num = len_idx - 115 + 0b11000000;
 		int len_extra = deflate_extra_length_bits[len_idx];
 		len_num <<= len_extra;
 		len_num |= (len_diff);
 		int len_total_bit = 8 + len_extra;
-		emitBits(out, len_num, len_total_bit);
+		emitBits(fout, len_num, len_total_bit);
 	}
 	int dist_idx = 0;
 	int dist_diff = 0;
@@ -207,11 +211,11 @@ void distance_len_to_bits(size_t distance, size_t len, char* out){
 	dist_num <<= dist_extra_bit;
 	dist_num |= dist_diff;
 	int dist_total_bit = 5 + dist_extra_bit;
-	emitBits(out, dist_num, dist_total_bit);
+	emitBits(fout, dist_num, dist_total_bit);
     
 }
 
-pair<size_t, size_t> str_match(const string& buffer, const string& str){
+pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_start_pos){
 	/*
 	计算[i,i+4)的hash
 	枚举hash表内所有hash值相等的pos:
@@ -219,7 +223,7 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str){
 	从i开始逐字节比较，得到最长匹配长度
 	返回最长匹配长度和位置
 	*/
-	size_t hash = HashCode(str);
+	size_t hash = HashCode(str.substr(0, 4));
 	if(hash_pos_map.count(hash)){
 		queue<int> que = hash_pos_map[hash];
 		int que_size = que.size();
@@ -230,7 +234,7 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str){
 			
 			int cnt = 0;
 			int str_len = str.size();
-			while(cnt < str_len && buffer[i + cnt] == str[cnt]){
+			while(cnt < str_len && buffer[pos + cnt] == str[cnt] && pos + cnt < str_start_pos){
 				cnt ++;
 			}
 			if(cnt >= length){
@@ -270,46 +274,94 @@ void update_hash(string buffer, size_t i){
 }
 
 
-bool lz77(const char * buffer, char *output){
+bool lz77(ofstream& fout, const char * buffer){
     
     size_t max_len = strlen(buffer);
-    string buffer_str = buffer;
+	// cout << "buffer = " << buffer << endl;
 	
-
+    string buffer_str = buffer;
+	// cout << "buffer_str = " << buffer_str << endl;
+	string out = "";
     if(!buffer){
         cerr << "The input char pointer is nullptr" << endl;
         cout << "Error in line " << __LINE__ << " in function " << __FUNCTION__ << " of file " << __FILE__ << endl;
         return false;
     }
     for(size_t i = 0; i < max_len;){
-        string out = "";
+		
         size_t idx = 0, len = 0;
         if(i + 5 >= max_len){// 剩余空间 <= 5, 直接发射
-            // out += buffer_str.substr(i, max_len - i);
+
+            // out += buffer_str.substr(i);
+			
 			int len = max_len - i;
-			literal_to_bits(buffer + i, output, len);
+			literal_to_bits(fout, buffer + i, len);
+			break;
 			
-        }else if(str_match(buffer_str, buffer_str.substr(i)).first != -1){ // 字符串匹配
+        }else if(str_match(buffer_str, buffer_str.substr(i), i).first != -1){ // 字符串匹配
             
-			idx = str_match(buffer_str, buffer_str.substr(i)).first;
-            len = str_match(buffer_str, buffer_str.substr(i)).second;
-            
-			
-            distance_len_to_bits(i - idx, len, output);
+			idx = str_match(buffer_str, buffer_str.substr(i), i).first;
+            len = str_match(buffer_str, buffer_str.substr(i), i).second;
+			idx = i-idx;
+		
+            // cout << "idx = " <<idx << "len = " << len << endl;
+            distance_len_to_bits(fout, idx, len);
+			// string res = "("+to_string(idx)+","+to_string(len)+")";
             // out += res;
             
 			for(int j = 0; j < len; j ++){
                 update_hash(buffer_str, i + j);
             }
+
             i += len;
         }else{ // 字符串不匹配，直接发射
 			
-            out += buffer_str.at(i) + "";
+            // out += buffer_str[i];
+			literal_to_bits(fout, buffer + i, 1);
             update_hash(buffer_str, i);
             i++;
         }
     }
+	// cout << "out = " << out << endl;
+	// output = out.data();
+	
     return true;
+}
+
+int main(){
+	ifstream fin("demo.txt");
+	fin.seekg(0, ios::end);
+	int length = fin.tellg();
+	fin.seekg(0, ios::beg);
+    char* buffer = new char[length + 1];
+    memset(buffer, 0, sizeof(char) * (length + 1));
+    fin.read(buffer, length);
+
+	ofstream fout("demo_output.txt");
+	
+	lz77(fout, buffer);
+	
+	//结束
+	emitBits(fout, 0, 7);
+	
+	// 字节补齐
+	int remain_bit = (total_bit / 8 + 1) * 8 - total_bit;
+	if(remain_bit){
+		emitBits(fout, 0, remain_bit);
+	}
+	
+	fout.close();
+	fin.close();
+
+	ifstream fin2("demo_output.txt");
+	fin2.seekg(0, ios::end);
+	length = fin2.tellg();
+	cout << "The length of demo_output.txt = " << length << endl;
+	fin2.close();
+	
+	return 0;
+	
+
 }
 
 
