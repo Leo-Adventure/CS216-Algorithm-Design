@@ -5,6 +5,7 @@
 #include<vector>
 #include<fstream>
 #include<queue>
+#include<bitset>
 
 #define DEFLATE_NUM_PRECODE_SYMS		19
 #define DEFLATE_MAX_MATCH_LEN			258
@@ -126,6 +127,8 @@ void emitBytes(ofstream& fout)
   {
     int num = (bits >> (len - 8)) & 0xff;
     char *c = (char *)&num;
+	bitset<8> bitvec2(num);
+	// cout << "In emitting, bitvec2 = " << bitvec2 << endl;
 	fout.write(c, sizeof(char) * 1);
 	// cout << "num = " << num << endl;
 	// cout << "*c = " << strlen(c) << endl;
@@ -133,7 +136,7 @@ void emitBytes(ofstream& fout)
     // strncat(chararray, c, 1);
 	// cout << "strlen(chararray) = " << strlen(chararray) << endl;
     len -= 8;
-    bits >>= 8;
+   
   }
 }
 
@@ -171,14 +174,15 @@ void literal_to_bits(ofstream& fout, const char* chars, int len){
 	}
     
 }
+
 void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 	int len_idx = 0;
 	int len_diff = 0;
 	// 找到长度对应字段索引
 	for(size_t i = 0; i < 29; i++){
-		if(len >= deflate_length_slot_base[i]){
-			len_idx = i;
-			len_diff = len - deflate_length_slot_base[i];
+		if(len < deflate_length_slot_base[i]){
+			len_idx = i - 1;
+			len_diff = len - deflate_length_slot_base[len_idx];
 			break;
 		}
 	}
@@ -187,7 +191,11 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 		int len_extra = deflate_extra_length_bits[len_idx];
 		len_num <<= len_extra;
 		len_num |= (len_diff);
+		// bitset<7> bitvec2(len_num);
+		// cout << "len_idx = " << len_idx << endl;
+		// cout << "bitvec2 = " << bitvec2;
 		int len_total_bit = 7 + len_extra;
+		// cout << "len_total_bit = " << len_total_bit;
 		emitBits(fout, len_num, len_total_bit);
 	}else{
 		int len_num = len_idx - 115 + 0b11000000;
@@ -195,14 +203,18 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 		len_num <<= len_extra;
 		len_num |= (len_diff);
 		int len_total_bit = 8 + len_extra;
+		// bitset<8> bitvec2(len_num);
+		// cout << "bitvec2 = " << bitvec2;
+		// cout << "len_total_bit = " << len_total_bit;
 		emitBits(fout, len_num, len_total_bit);
 	}
 	int dist_idx = 0;
 	int dist_diff = 0;
+	// 找到距离对应索引
 	for(size_t i = 0; i < 30; i++){
-		if(distance >= deflate_offset_slot_base[i]){
-			dist_idx = i;
-			dist_diff = distance - deflate_offset_slot_base[i];
+		if(distance < deflate_offset_slot_base[i]){
+			dist_idx = i - 1;
+			dist_diff = distance - deflate_offset_slot_base[dist_idx];
 			break;
 		}
 	}
@@ -210,7 +222,12 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 	int dist_num = dist_idx;//5 bits
 	dist_num <<= dist_extra_bit;
 	dist_num |= dist_diff;
+	
 	int dist_total_bit = 5 + dist_extra_bit;
+	// bitset<8> bitvec2(dist_num);
+	// cout << "dist_idx = " << dist_idx;
+	// cout << " bitvec2 = " << bitvec2;
+	// cout << "dist_total_bit" << dist_total_bit << endl;
 	emitBits(fout, dist_num, dist_total_bit);
     
 }
@@ -305,6 +322,7 @@ bool lz77(ofstream& fout, const char * buffer){
 			idx = i-idx;
 		
             // cout << "idx = " <<idx << "len = " << len << endl;
+			// cout << "idx = " << idx << " len = " << len << endl;
             distance_len_to_bits(fout, idx, len);
 			// string res = "("+to_string(idx)+","+to_string(len)+")";
             // out += res;
@@ -363,5 +381,4 @@ int main(){
 	
 
 }
-
 
