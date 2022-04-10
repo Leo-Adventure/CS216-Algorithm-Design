@@ -506,7 +506,9 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fout.write(cen_file_header_sig, 4 * sizeof(char));
 
         // version made by and version needed to extract
-        fout.write(version, 2 * sizeof(char));
+        char made_by_version[2];
+        made_by_version[0] = 0xa + '\0', made_by_version[1] = '\0';
+        fout.write(made_by_version, 2 * sizeof(char));
         fout.write(version, 2 * sizeof(char));
 
         // general purpose bit flag
@@ -587,8 +589,8 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fout.write(tot_ent_dir, 2 * sizeof(char));
 
         // size of the central directory
-        char size_cen_dir[4];
-        size_cen_dir[0] = 0x36 + '\0', size_cen_dir[1] = '\0', size_cen_dir[2] = '\0', size_cen_dir[3] = '\0';
+        int central_directory_size = 46 + read_filename_len;
+        char *size_cen_dir = (char*)&central_directory_size;
         fout.write(size_cen_dir, 4 * sizeof(char));
 
         //offset of start of central directory with respect to the starting disk number

@@ -97,6 +97,7 @@ The key segments are:
 - complete the zip deflate using static huffman compression~ Hurray!
 - Next I will improve the algorithm and do many experiments~
 - improve the structure of the zip files, dividing them into three files——zip.hpp, zip.cpp, main.cpp and write CMakeLists.txt to run them easily.
+- update some bugs(central directory size bug ~)
 
 The `zip.hpp` file is header file, and the `zip.cpp` is the source file.
 
