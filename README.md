@@ -90,3 +90,10 @@ The key segments are:
 - verify the LZ77 algorithm and implement the static Huffman compression.
 - Huffman has been tested, meaning that deflate has been done
 - Next I will combine the header and deflate algorithm, good luck!
+
+#### 2022/4/10
+
+- Correct some Bugs and combine the header and deflate successfully~
+
+- complete the zip deflate using static huffman compression~ Hurray!
+- Next I will improve the algorithm and do many experiences~
