@@ -94,6 +94,22 @@ The key segments are:
 #### 2022/4/10
 
 - Correct some Bugs and combine the header and deflate successfully~
-
 - complete the zip deflate using static huffman compression~ Hurray!
 - Next I will improve the algorithm and do many experiences~
+- improve the structure of the zip files, dividing them into three files——zip.hpp, zip.cpp, main.cpp and write CMakeLists.txt to run them easily.
+
+The `zip.hpp` file is header file, and the `zip.cpp` is the source file.
+
+### How to run it
+
+Your device should support the minimum cmake version of 3.16 and the C++ version is C++17.
+
+just arrange the file structure as shown, then run the
+
+```bash
+cmake . && make
+```
+
+commands so that the executable file named `zip` will be generated.
+
+Then run `./zip` and input the source txt file you want to compress and input the zip file name you want to generate, then a zip file will be generated.
