@@ -101,6 +101,10 @@ The key segments are:
 
 The `zip.hpp` file is header file, and the `zip.cpp` is the source file.
 
+#### 2022/4/11
+
+- Going to fix the bug that I can not compress the file whose size is larger than 20KB
+
 ### How to run it
 
 Your device should support the minimum cmake version of 3.16 and the C++ version is C++17.
