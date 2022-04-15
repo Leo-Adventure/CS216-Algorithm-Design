@@ -9,8 +9,9 @@ set(SOURCE
 )
 
 add_library(zipper
-    STATIC
+    SHARED
         src/zip.cpp
+        src/deflate.cpp
 )
 
 target_include_directories(zipper
