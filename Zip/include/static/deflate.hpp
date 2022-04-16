@@ -2,7 +2,7 @@
 #include<string>
 #include<cstring>
 #include <fstream>
-
+#include<sys/time.h>
 #include<map>
 #include<queue>
 #include<bitset>
@@ -125,7 +125,7 @@ using namespace std;
 void emitBytes(ofstream& fout);
 void emitBits(ofstream& fout, int bit, int l);
 
-void literal_to_bits(ofstream& fout, const char* chars, int len);
+void literal_to_bits(ofstream& fout, const unsigned char* chars, int len);
 void distance_len_to_bits(ofstream &fout, size_t distance, size_t len);
 
 

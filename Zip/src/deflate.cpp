@@ -1,19 +1,19 @@
-#include<deflate.hpp>
+#include"deflate.hpp"
 
-
+#include<bitset>
 map<size_t, size_t> pos_hash_map;
 map<size_t, queue<int>> hash_pos_map;
 
 int remain_len = 0;
 size_t total_bit = 0;
 int bits = 0; 
-
+double total_io_time = 0;
 void emitBytes(ofstream& fout)
 {
   while (remain_len >= 8)
   {
-    int num = (bits >> (remain_len - 8)) & 0xff;
-    int reverse_num = 0;
+    unsigned int num = (bits >> (remain_len - 8)) & 0xff;
+    unsigned int reverse_num = 0;
 	for(int i = 0; i < 8; i++){
 		reverse_num |= (num & 0b1);
 		
@@ -21,10 +21,15 @@ void emitBytes(ofstream& fout)
 		num >>= 1;
 	}
 	reverse_num >>= 1;
-    char *c = (char *)&reverse_num;
+    char *c =(char*)&reverse_num;
 	// bitset<8> bitvec2(reverse_num);
     // cout << "In emitting, num = " << bitvec2 << endl;
+	timeval write_time1, write_time2;
+	gettimeofday(&write_time1, NULL);
 	fout.write(c, sizeof(char) * 1);
+	gettimeofday(&write_time2, NULL);
+	total_io_time += (write_time2.tv_sec - write_time1.tv_sec) + (double)(write_time2.tv_usec -
+write_time1.tv_usec) / 1000000.0;
     remain_len -= 8;
    
   }
@@ -54,21 +59,24 @@ size_t HashCode (const std::string &str) {
 
 
 
-void literal_to_bits(ofstream& fout, const char* chars, int len){
-    // cout << "In literal to bits method" << endl;
+void literal_to_bits(ofstream& fout, const unsigned char* chars, int len){
+
 	for(int i = 0; i < len; i++){
-		char ch = chars[i];
-		int num = ch - '\0';
-		if(num <= 143){
-			num = (num + 0b00110000) & 0b11111111;
+		unsigned char ch = chars[i];
+       	int num = ch;
+        if(num >= 0 && num <= 143){
+			num = (num + 0b00110000);
+           
 			emitBits(fout, num, 8);
 		}else{
+			
 			num -= 144;
-			num = (num + 0b110010000) & 0b111111111;
-			emitBits(fout, num, 9);
+			num = (num + 0b110010000) ;
+            
+            emitBits(fout, num, 9);
 		}
 	}
-    // cout << "out of the conversion method " << endl;
+  
 }
 
 void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
@@ -87,7 +95,7 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 			break;
 		}
 	}
-    int reverse_num = 0;
+    unsigned int reverse_num = 0;
 	for(int i = 0; i < len_extra; i++){
 		reverse_num |= (len_diff & 0b1);
 		reverse_num <<= 1;
@@ -96,21 +104,21 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 	reverse_num >>= 1;
     len_diff = reverse_num;
 	if(len < 115){
-		int len_num = len_idx + 0b0000001;
+		unsigned int len_num = len_idx + 0b0000001;
 		len_num <<= len_extra;
 		len_num |= (len_diff);
 		
-		int len_total_bit = 7 + len_extra;
+		unsigned int len_total_bit = 7 + len_extra;
         // bitset<8> bitvec2(len_num);
         // cout << "len_num = " << bitvec2;
         // cout << ", len_total_bit = " << len_total_bit << endl; 
 		emitBits(fout, len_num, len_total_bit);
 	}else{
-		int len_num = len_idx - 115 + 0b11000000;
+		unsigned int len_num = len_idx - 115 + 0b11000000;
 		
 		len_num <<= len_extra;
 		len_num |= (len_diff);
-		int len_total_bit = 8 + len_extra;
+		unsigned int len_total_bit = 8 + len_extra;
         // bitset<8> bitvec2(len_num);
         // cout << "len_num = " << bitvec2;
         // cout << ", len_total_bit = " << len_total_bit << endl; 
@@ -126,7 +134,7 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 			break;
 		}
 	}
-	int dist_extra_bit = deflate_extra_offset_bits[dist_idx];
+	unsigned int dist_extra_bit = deflate_extra_offset_bits[dist_idx];
     // cout << "dist_extra_bit = " << dist_extra_bit << endl;
     int reverse_diff_num = 0;
 	for(int i = 0; i < dist_extra_bit; i++){
@@ -195,11 +203,11 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_
 
 void update_hash(string buffer, int i){
     // 遍历滑动窗口之外的元素进行删除
-	for(auto iter = pos_hash_map.rbegin(); iter != pos_hash_map.rend() && int(iter -> first) < i - 32768; iter++){
+	for(auto iter = pos_hash_map.rbegin(); iter != pos_hash_map.rend() && int(iter -> first) < i - 32; iter++){
 
         size_t hash = iter -> second;
 		queue<int>q = hash_pos_map[hash];
-		while(!q.empty() && q.front() < i - 32768){
+		while(!q.empty() && q.front() < i - 32){
 			q.pop();
 		}
 		pos_hash_map.erase(iter->first);
@@ -238,7 +246,7 @@ bool lz77(ofstream& fout, const char * buffer){
         size_t idx = 0, len = 0;
         if(i + 5 >= max_len){// 剩余空间 <= 5, 直接发射
 			int len = max_len - i;
-			literal_to_bits(fout, buffer + i, len);
+			literal_to_bits(fout, (unsigned char*)(buffer + i), len);
 			break;
 			
         }
@@ -258,7 +266,7 @@ bool lz77(ofstream& fout, const char * buffer){
             i += len;
         }
         else{ // 字符串不匹配，直接发射 literal
-			literal_to_bits(fout, buffer + i, 1);
+			literal_to_bits(fout, (unsigned char*)(buffer + i), 1);
             update_hash(buffer_str, i);
             i++;
         }
@@ -272,6 +280,7 @@ bool lz77(ofstream& fout, const char * buffer){
     if(remain_bit){
         emitBits(fout, 0, remain_bit);
     }
+	cout << "The part1 of IO time is " << total_io_time << "s" <<endl;
 	
     return true;
 }

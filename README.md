@@ -118,3 +118,8 @@ cmake . && make
 commands so that the executable file named `zip` will be generated.
 
 Then run `./zip` and input the source txt file you want to compress and input the zip file name you want to generate, then a zip file will be generated.
+
+#### 2022/4/16
+
+- fix the bug that the Chinese text file cannot be compressed.
+- do some experiments and update report.

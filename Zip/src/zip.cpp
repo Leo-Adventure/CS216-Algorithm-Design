@@ -2,6 +2,7 @@
 #include "deflate.hpp"
 
 extern size_t total_bit;
+double total_io_time2 = 0;
 
 // 与 crc 32 计算相关的代码参考了 https://blog.csdn.net/gongmin856
 ///article/details/77101397?ops_request_misc=%257B%2522request%255Fid%2522%253A%252
@@ -38,6 +39,8 @@ bool convert_file_to_zip(string read_filename, string write_filename){
     
     tm *whole_time = localtime(&systemTime);
     
+    timeval io_time1, io_time2, io_time3, io_time4;
+    gettimeofday(&io_time1, NULL);
 
     fstream fin(read_filename);
     ofstream fout(write_filename);
@@ -47,6 +50,7 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         fin.clear();
         return false; 
     }else{
+
         
         fin.seekg(0, ios::end);
         length = fin.tellg();
@@ -54,7 +58,7 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         buffer = new char[length + 1];
         memset(buffer, 0, sizeof(char) * (length + 1));
         fin.read(buffer, length);
-       
+        cout << "length of file = " << length << endl;
         fout.seekp(0, ios::beg);
 
         // 填充zip header 字段
@@ -146,12 +150,16 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         const char *file_name = read_filename.data();
         fout.write(file_name, read_filename.size() * sizeof(char));
 
+        gettimeofday(&io_time2, NULL);
+        total_io_time2 += (io_time2.tv_sec - io_time1.tv_sec) + (double)(io_time2.tv_usec -
+io_time1.tv_usec) / 1000000.0;
+
         
 
         //static huffman compression
         lz77(fout, buffer);
 
-       
+        gettimeofday(&io_time3, NULL);
         int pos = fout.tellp();
         fout.seekp(compressed_size_pos, ios::beg);
         // cout << "fout.tellp() = " << fout.tellp() << endl;
@@ -276,8 +284,12 @@ bool convert_file_to_zip(string read_filename, string write_filename){
     
     fin.close();
     fout.close();
+    gettimeofday(&io_time4, NULL);
+    total_io_time2 += (io_time4.tv_sec -io_time3.tv_sec) + (double)(io_time4.tv_usec -
+io_time3.tv_usec) / 1000000.0;
     // write_bin_file(buffer, length);
-    delete(buffer);
+    cout << "The part2 of IO time is " << total_io_time2 << "s" << endl;
+    delete(buffer); 
     return true;
     
 }
