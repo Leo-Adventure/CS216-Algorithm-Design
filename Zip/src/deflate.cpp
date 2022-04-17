@@ -7,7 +7,7 @@ map<size_t, queue<int>> hash_pos_map;
 int remain_len = 0;
 size_t total_bit = 0;
 int bits = 0; 
-double total_io_time = 0;
+// double total_io_time = 0;
 void emitBytes(ofstream& fout)
 {
   while (remain_len >= 8)
@@ -22,14 +22,13 @@ void emitBytes(ofstream& fout)
 	}
 	reverse_num >>= 1;
     char *c =(char*)&reverse_num;
-	// bitset<8> bitvec2(reverse_num);
-    // cout << "In emitting, num = " << bitvec2 << endl;
+
 	timeval write_time1, write_time2;
-	gettimeofday(&write_time1, NULL);
+	// gettimeofday(&write_time1, NULL);
 	fout.write(c, sizeof(char) * 1);
-	gettimeofday(&write_time2, NULL);
-	total_io_time += (write_time2.tv_sec - write_time1.tv_sec) + (double)(write_time2.tv_usec -
-write_time1.tv_usec) / 1000000.0;
+// 	gettimeofday(&write_time2, NULL);
+// 	total_io_time += (write_time2.tv_sec - write_time1.tv_sec) + (double)(write_time2.tv_usec -
+// write_time1.tv_usec) / 1000000.0;
     remain_len -= 8;
    
   }
@@ -80,11 +79,11 @@ void literal_to_bits(ofstream& fout, const unsigned char* chars, int len){
 }
 
 void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
-    // cout << "len = " << len << " distance = " << distance << endl;
+   
 	int len_idx = 0;
 	int len_diff = 0;
     int len_extra = 0;
-    // cout << "tellg() = " << fout.tellp() << endl;
+
 	// 找到长度对应字段索引
 	for(size_t i = 0; i < 29; i++){
 		if(len < deflate_length_slot_base[i]){
@@ -109,19 +108,14 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 		len_num |= (len_diff);
 		
 		unsigned int len_total_bit = 7 + len_extra;
-        // bitset<8> bitvec2(len_num);
-        // cout << "len_num = " << bitvec2;
-        // cout << ", len_total_bit = " << len_total_bit << endl; 
-		emitBits(fout, len_num, len_total_bit);
+       	emitBits(fout, len_num, len_total_bit);
 	}else{
 		unsigned int len_num = len_idx - 115 + 0b11000000;
 		
 		len_num <<= len_extra;
 		len_num |= (len_diff);
 		unsigned int len_total_bit = 8 + len_extra;
-        // bitset<8> bitvec2(len_num);
-        // cout << "len_num = " << bitvec2;
-        // cout << ", len_total_bit = " << len_total_bit << endl; 
+       
 		emitBits(fout, len_num, len_total_bit);
 	}
 	int dist_idx = 0;
@@ -135,31 +129,24 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 		}
 	}
 	unsigned int dist_extra_bit = deflate_extra_offset_bits[dist_idx];
-    // cout << "dist_extra_bit = " << dist_extra_bit << endl;
+
     int reverse_diff_num = 0;
 	for(int i = 0; i < dist_extra_bit; i++){
 		reverse_diff_num |= (dist_diff & 0b1);//10
 		reverse_diff_num <<= 1;//10_
 		dist_diff >>= 1;//0
 	}
-    // cout << "reverse_diff_num =" << reverse_diff_num << endl;
+
 	reverse_diff_num >>= 1;
     dist_diff = reverse_diff_num;
-    // cout << "dist_diff = " << dist_diff << endl;
-
 	int dist_num = dist_idx;//5 bits
 	dist_num <<= dist_extra_bit;
 	dist_num |= dist_diff;
-    // bitset<9> bitvec3(dist_num);
-    // cout << "dist_num = " << bitvec3;
-   
-	
 	int dist_total_bit = 5 + dist_extra_bit;
-    // cout << ", dist_total_bit = " << dist_total_bit << endl; 
+
 	
 	emitBits(fout, dist_num, dist_total_bit);
-    // cout << "tellg() = " << fout.tellp() << endl;
-    // cout << "out the distance coding" << endl;
+   
     
 }
 
@@ -169,7 +156,7 @@ void distance_len_to_bits(ofstream &fout, size_t distance, size_t len){
 @parameter str_start_pos: 待匹配字符串在原有字节流的起始位置
 */
 pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_start_pos){
-	// cout << "In string match" << endl;
+
 	size_t hash = HashCode(str.substr(0, 4));
 	if(hash_pos_map.count(hash)){ // 如果缓冲区有匹配的字符串
 		queue<int> que = hash_pos_map[hash];
@@ -178,6 +165,10 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_
 		for(int i = 0; i < que_size; i++){
 			int pos = que.front();
 			que.pop();
+			if(pos < str_start_pos - 5000){
+				pos_hash_map.erase(pos);
+				continue;
+			}
 			int cnt = 0;
 			int str_len = str.size();
 			while(cnt < str_len && buffer[pos + cnt] == str[cnt] && pos + cnt < str_start_pos){
@@ -189,7 +180,7 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_
 			}
 			que.push(pos);
 		}
-        // cout << "out the string match " << endl;
+
         if(length < 4){ // 只记录长度至少为4 的字符串信息，不满足则返回{-1，-1}
             return {-1, -1};
         }
@@ -203,15 +194,6 @@ pair<size_t, size_t> str_match(const string& buffer, const string& str, int str_
 
 void update_hash(string buffer, int i){
     // 遍历滑动窗口之外的元素进行删除
-	for(auto iter = pos_hash_map.rbegin(); iter != pos_hash_map.rend() && int(iter -> first) < i - 32; iter++){
-
-        size_t hash = iter -> second;
-		queue<int>q = hash_pos_map[hash];
-		while(!q.empty() && q.front() < i - 32){
-			q.pop();
-		}
-		pos_hash_map.erase(iter->first);
-    }
 
 	size_t hashcode = HashCode(buffer.substr(i, 4));
 	pos_hash_map[i] = hashcode;
@@ -242,7 +224,7 @@ bool lz77(ofstream& fout, const char * buffer){
         return false;
     }
     for(size_t i = 0; i < max_len;){
-        // cout << "i = " << i << endl;
+       
         size_t idx = 0, len = 0;
         if(i + 5 >= max_len){// 剩余空间 <= 5, 直接发射
 			int len = max_len - i;
@@ -280,7 +262,6 @@ bool lz77(ofstream& fout, const char * buffer){
     if(remain_bit){
         emitBits(fout, 0, remain_bit);
     }
-	cout << "The part1 of IO time is " << total_io_time << "s" <<endl;
 	
     return true;
 }

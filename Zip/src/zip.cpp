@@ -2,7 +2,7 @@
 #include "deflate.hpp"
 
 extern size_t total_bit;
-double total_io_time2 = 0;
+// double total_io_time2 = 0;
 
 // 与 crc 32 计算相关的代码参考了 https://blog.csdn.net/gongmin856
 ///article/details/77101397?ops_request_misc=%257B%2522request%255Fid%2522%253A%252
@@ -39,8 +39,8 @@ bool convert_file_to_zip(string read_filename, string write_filename){
     
     tm *whole_time = localtime(&systemTime);
     
-    timeval io_time1, io_time2, io_time3, io_time4;
-    gettimeofday(&io_time1, NULL);
+    // timeval io_time1, io_time2, io_time3, io_time4;
+    // gettimeofday(&io_time1, NULL);
 
     fstream fin(read_filename);
     ofstream fout(write_filename);
@@ -150,25 +150,25 @@ bool convert_file_to_zip(string read_filename, string write_filename){
         const char *file_name = read_filename.data();
         fout.write(file_name, read_filename.size() * sizeof(char));
 
-        gettimeofday(&io_time2, NULL);
-        total_io_time2 += (io_time2.tv_sec - io_time1.tv_sec) + (double)(io_time2.tv_usec -
-io_time1.tv_usec) / 1000000.0;
+        // gettimeofday(&io_time2, NULL);
+//         total_io_time2 += (io_time2.tv_sec - io_time1.tv_sec) + (double)(io_time2.tv_usec -
+// io_time1.tv_usec) / 1000000.0;
 
         
 
         //static huffman compression
         lz77(fout, buffer);
 
-        gettimeofday(&io_time3, NULL);
+        // gettimeofday(&io_time3, NULL);
         int pos = fout.tellp();
         fout.seekp(compressed_size_pos, ios::beg);
-        // cout << "fout.tellp() = " << fout.tellp() << endl;
+
         int new_compressed_size = total_bit/8;
         
         char* new_com_size = (char*)&new_compressed_size;
         fout.write(new_com_size, 4 * sizeof(char));
         fout.seekp(pos, ios::beg);
-        // cout << "fout.tellp() = " << fout.tellp() << endl;
+
         
        
         // central file header signature
@@ -276,19 +276,17 @@ io_time1.tv_usec) / 1000000.0;
 
         length = fin.tellg();
         
-        
-        // cout << "length = " << length  << " bytes" << endl;
-        // cout << buffer << endl;
+
         
     }
     
     fin.close();
     fout.close();
-    gettimeofday(&io_time4, NULL);
-    total_io_time2 += (io_time4.tv_sec -io_time3.tv_sec) + (double)(io_time4.tv_usec -
-io_time3.tv_usec) / 1000000.0;
+//     gettimeofday(&io_time4, NULL);
+//     total_io_time2 += (io_time4.tv_sec -io_time3.tv_sec) + (double)(io_time4.tv_usec -
+// io_time3.tv_usec) / 1000000.0;
     // write_bin_file(buffer, length);
-    cout << "The part2 of IO time is " << total_io_time2 << "s" << endl;
+    // cout << "The part2 of IO time is " << total_io_time2 << "s" << endl;
     delete(buffer); 
     return true;
     

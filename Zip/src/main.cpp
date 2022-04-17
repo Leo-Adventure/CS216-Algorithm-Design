@@ -2,7 +2,7 @@
 
 
 int main(int argc, char * argv[]){
-    struct timeval total_t1, total_t2;
+    // struct timeval total_t1, total_t2;
     
     string file_name = "";
     string output_file_name = "";
@@ -23,11 +23,11 @@ int main(int argc, char * argv[]){
         return 1;
     }
     // 计算 zip 程序运行总时间
-    gettimeofday(&total_t1, NULL);
+    // gettimeofday(&total_t1, NULL);
     convert_file_to_zip(file_name, output_file_name);
-    gettimeofday(&total_t2, NULL);
-    double total_time_use = (total_t2.tv_sec - total_t1.tv_sec) + (double)(total_t2.tv_usec -
-total_t1.tv_usec) / 1000000.0;
-    cout << "The total time used in zipping = " << total_time_use << "s" <<endl;
+//     gettimeofday(&total_t2, NULL);
+//     double total_time_use = (total_t2.tv_sec - total_t1.tv_sec) + (double)(total_t2.tv_usec -
+// total_t1.tv_usec) / 1000000.0;
+//     cout << "The total time used in zipping = " << total_time_use << "s" <<endl;
     return 0;
 }
