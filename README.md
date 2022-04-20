@@ -27,6 +27,10 @@ The question A is about the Peano curve, which is the advanced level of Hilbert 
 
 The question B is the application of segment Tree, which is quite useful in updating the interval value and finding the sum of a given interval in $O(nlogn)$
 
+## OJ7 Dynamic Planning
+
+The question A is about the simple dynamic planning and searching with memorization.
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
@@ -46,6 +50,10 @@ In this assignment, I have designed, implemented and analyzed the algorithm to f
 The procedure of designing the algorithm has been introduced detailedly.
 
 What's more, I have uploaded the implemented code to the directory “Assignment/Assignment2/closed-pair.cpp”
+
+## Assignment3 Using FFT to accelerate the convolution
+
+In this assignment, I just called the FFT in Python to complete it.
 
 ## Project 1 Zip Compressor
 
