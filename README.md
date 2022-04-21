@@ -31,6 +31,8 @@ The question B is the application of segment Tree, which is quite useful in upda
 
 The question A is about the simple dynamic planning and searching with memorization.
 
+The question B is about the dynamic planning and interesting derivation of formula.
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
