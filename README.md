@@ -39,6 +39,16 @@ The question A is about the simple count dp.
 
 The question B is about the difficult DP with CDQ divide 
 
+## OJ9 Dynamic Planning
+
+The question A is about the application of BellmanFord algorithm to find the shortes path in a negtive weighted graph. 
+
+The question B is about the wildcast matching of a string, which is also about the dynamic planning.
+
+## OJ10 Dynamic Planning
+
+The question A is about the DP algorithm plus game algorithm and memoized search.
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
