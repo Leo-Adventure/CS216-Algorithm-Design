@@ -49,6 +49,8 @@ The question B is about the wildcast matching of a string, which is also about t
 
 The question A is about the DP algorithm plus game algorithm and memoized search.
 
+The question B is about the DP algorithm and improve the combination calculation using pascal triangle and powers array.
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
