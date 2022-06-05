@@ -51,6 +51,16 @@ The question A is about the DP algorithm plus game algorithm and memoized search
 
 The question B is about the DP algorithm and improve the combination calculation using pascal triangle and powers array.
 
+## OJ11 Network Flow
+
+The question A and B both use the Dinic Algorithm to solve the network flow problem. And the construction of relation grapg of question B is hard to build.
+
+## OJ12 Random
+
+The question A is about using random algorithm to optimize the knapsack problem to make the time complexity to reach O(N).
+
+The question B is about using random algorithm to optimize the problem of finding the closest pair of a 3D point cloud, which can be optimized from O(NlogN) to O(N).
+
 ## Assignment1 Report on modern CPU caching
 
 Please write a simple report to introduce the caching mechanism used in modern CPUs. Try to answer the following, but not limit to, questions in your report.
@@ -74,6 +84,10 @@ What's more, I have uploaded the implemented code to the directory “Assignment
 ## Assignment3 Using FFT to accelerate the convolution
 
 In this assignment, I just called the FFT in Python to complete it.
+
+## Assignment4 Report on AI Poery
+
+In this assignment, I wrote a report on AI Poetry. In the report, I firstly introduce the modern technology on AI poetry, and   put forward my viewpoint on the field.
 
 ## Project 1 Zip Compressor
 
